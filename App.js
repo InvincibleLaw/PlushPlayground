@@ -7,32 +7,27 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Modal from 'react-native-modal';
-import { Ionicons, Feather, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Ionicons, Feather, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, useAnimatedGestureHandler, runOnJS, withTiming, withRepeat, withSequence, cancelAnimation, Easing } from 'react-native-reanimated';
 import { GestureDetector, Gesture, GestureHandlerRootView, PanGestureHandler, PinchGestureHandler, RotationGestureHandler, State } from 'react-native-gesture-handler';
-import { Skia, SkiaPath, Canvas, Path, useCanvasRef, center } from "@shopify/react-native-skia";
+//import { Skia, SkiaPath, Canvas, Path, useCanvasRef, center } from "@shopify/react-native-skia";
 import { LinearGradient } from 'expo-linear-gradient';
 import { Svg, Rect, Polygon } from 'react-native-svg';
-import { imagePacks } from './assets/imagePacks/imagePacks';
+
+//Asset Files, Unique App Code
 import { FavoritesProvider, useFavorites } from "./favorites";
 import * as ImagePicker from 'expo-image-picker';
 
+//App Theme
 import { tokens } from "./tokens";
+import { imagePacks } from "./assets/imagePacks";
+import { StoryboardImg, LibraryImg, ShopImg, HomeBgImg, ShopBgImg, BuddieSystemImg, AuroraImg, } from "./Images/Homepage/imageAssets";
 
-
-// Preload Home Screen button image assets
-const assets = {
-  storyboard: require("./Images/Homepage/Lets Play Cropped.png"),
-  library: require("./Images/Homepage/Library Cropped.png"),
-  shop: require("./Images/Homepage/Shop.png"),
-  homeBg: require("./assets/imagePacks/backgrounds/great_outdoor_alt2.png"),
-  
-  ShopBg: require("./assets/imagePacks/backgrounds/great_outdoor_alt2.png"),
-  BuddieSystem: require("./Images/Affiliates/buddiesystem_link.png"),
-  Aurora: require("./Images/Affiliates/aurora_link.png"),
-};
+useEffect(() => {
+  console.log("Hermes enabled?", !!global.HermesInternal);
+  console.log("Fabric enabled?", !!global.nativeFabricUIManager);
+}, []);
 
 //Affilate Links
 const SHOP_URLS = {
@@ -750,7 +745,10 @@ function DraggableImage({
   favoriteBarHeight, onOverFavorite, onLeaveFavorite, onFavorite, favoriteTopY,
 }) {
 
-  const IMAGE_SIZE = tokens.imageSize.lg;
+  const IMAGE_SIZE_NUM = tokens.imageSize.lg;   // number
+  const BUBBLE_MAX_W   = tokens.canvasModal.md; // number
+  const BUBBLE_H_3L    = 78;                    // already your estimate for 3 lines
+
 
   const wordCount = typeof text === 'string' ? text.trim().split(/\s+/).length : 0;
 
@@ -775,9 +773,14 @@ function DraggableImage({
   const sharedScale = useSharedValue(scale);
   const sharedRotation = useSharedValue(rotation);
 
-  const bubbleAnimatedStyle = useAnimatedStyle(() => ({
-  width: Math.min(BASE_BUBBLE_WIDTH * sharedScale.value, tokens.canvasModal.md),
-      }));
+  const bubbleAnimatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    const scale = sharedScale.value || 1;
+    const w = Math.min(BASE_BUBBLE_WIDTH * scale, BUBBLE_MAX_W);
+    return { width: w };
+  });
+
+
 
   // Keep shared values in sync with props
   React.useEffect(() => { translateX.value = x; }, [x]);
@@ -983,37 +986,45 @@ const panGesture = useAnimatedGestureHandler({
   });
 
   const animatedStyle = useAnimatedStyle(() => {
-    // Use these for images (not speech bubbles/text):
-  const MIN_DRAWING_SIZE = 24;
-  const imageWidth = isDrawing && drawingWidth ? Math.max(drawingWidth, MIN_DRAWING_SIZE) * sharedScale.value : IMAGE_SIZE * sharedScale.value;
-  const imageHeight = isDrawing && drawingHeight ? Math.max(drawingHeight, MIN_DRAWING_SIZE) * sharedScale.value : IMAGE_SIZE * sharedScale.value;
-
-  if (renderContent && isSpeechBubble) {
+    'worklet';
     const scale = sharedScale.value || 1;
-    const bw = Math.min(BASE_BUBBLE_WIDTH * scale, tokens.canvasModal.md);
-    const bh = BUBBLE_HEIGHT_3LINES * scale;
+
+    // IMPORTANT: do NOT reference renderContent here
+    if (isSpeechBubble) {
+      const bw = Math.min(BASE_BUBBLE_WIDTH * scale, BUBBLE_MAX_W);
+      const bh = BUBBLE_H_3L * scale;
+
+      return {
+        position: "absolute",
+        left: (translateX.value ?? 0) - bw / 2,
+        top:  (translateY.value ?? 0) - bh / 2,
+        width: bw,
+        zIndex: 10,
+        transform: [{ rotateZ: `${sharedRotation.value || 0}rad` }],
+      };
+    }
+
+    // images / drawings
+    const MIN_DRAWING_SIZE = 24;
+    const imgW = (isDrawing && drawingWidth)
+      ? Math.max(drawingWidth,  MIN_DRAWING_SIZE) * scale
+      : IMAGE_SIZE_NUM * scale;
+
+    const imgH = (isDrawing && drawingHeight)
+      ? Math.max(drawingHeight, MIN_DRAWING_SIZE) * scale
+      : IMAGE_SIZE_NUM * scale;
 
     return {
       position: "absolute",
-      left: (translateX.value ?? 0) - bw / 2,
-      top: (translateY.value ?? 0) - bh / 2,
-      width: bw,
+      left: translateX.value - imgW / 2,
+      top:  translateY.value - imgH / 2,
+      width: imgW,
+      height: imgH,
       zIndex: 10,
       transform: [{ rotateZ: `${sharedRotation.value || 0}rad` }],
     };
-    } else {
-      // For images/drawings: use calculated width/height
-      return {
-        position: "absolute",
-        left: translateX.value - imageWidth / 2,
-        top: translateY.value - imageHeight / 2,
-        width: imageWidth,
-        height: imageHeight,
-        zIndex: 10,
-        transform: [{ rotateZ: `${sharedRotation.value}rad` }]
-      };
-    }
   });
+
 
   // Handler refs
   const panRef = useRef();
@@ -2194,7 +2205,7 @@ const favoriteTopLocal = Math.max(0, favoriteBarY - canvasY); // canvas-space Y 
     )}
 
       {/* Drawing - Brush */}
-     <DrawingBrush
+     {/*<DrawingBrush
       ref={drawingBrushRef}
       visible={isDrawing}
       brushColor={brushColor}
@@ -2242,7 +2253,8 @@ const favoriteTopLocal = Math.max(0, favoriteBarY - canvasY); // canvas-space Y 
         }
       }}
 
-    />
+    /> 
+    */}
 
       {/* Render images on canvas */}
       <View
@@ -2883,7 +2895,7 @@ function DraggableHistoryBubble({ line, image, source, onTap, audioUri }) {
 }
 
 // DrawingBrush lets the user draw and commit the drawing as an image
-const DrawingBrush = forwardRef(function DrawingBrush(
+{/*const DrawingBrush = forwardRef(function DrawingBrush(
   { visible, brushColor = "#BA55D3", brushWidth = 5, canvasWidth, canvasHeight, onComplete },
   ref
 ) {
@@ -3087,8 +3099,7 @@ function extractPointsFromPath(pathStr) {
     points.push({ x: parseFloat(match[1]), y: parseFloat(match[2]) });
   }
   return points;
-}
-
+} */}
 
 // Library screen with Audio/Images tabs
 function LibraryScreen({ library, setLibrary, onSelectImage, setTab, setBottomTab, backgroundsFlat, lastStoryboardTab, updateStoryboardPage, canAddToPage, MAX_ITEMS_PER_PAGE }) {
@@ -3109,7 +3120,6 @@ function LibraryScreen({ library, setLibrary, onSelectImage, setTab, setBottomTa
       ? (Array.isArray(favorites) ? favorites : [])
       : (imagePacks?.[selectedImagePack] ?? []);
 
-    
     const plushOffsetRef = useRef(0);
 
     //Right side: Image popup modal
@@ -3778,7 +3788,7 @@ function LibraryScreen({ library, setLibrary, onSelectImage, setTab, setBottomTa
     return (
       <SafeAreaView style={{ flex: 1 }}>
         <ImageBackground
-          //source={assets.ShopBg}
+          //source={ShopBgImg}
           style={styles.shopbackground}
           resizeMode="cover"
         >
@@ -3811,7 +3821,7 @@ function LibraryScreen({ library, setLibrary, onSelectImage, setTab, setBottomTa
               activeOpacity={0.85}
               hitSlop={12}
             >
-              <Image source={assets.BuddieSystem} style={styles.shopButtonImage} />
+              <Image source={BuddieSystemImg} style={styles.shopButtonImage} />
               <Text style={styles.shopButtonOverlayText}>BUDDIE SYSTEM</Text>
             </TouchableOpacity>
 
@@ -3822,7 +3832,7 @@ function LibraryScreen({ library, setLibrary, onSelectImage, setTab, setBottomTa
               activeOpacity={0.85}
               hitSlop={12}
             >
-              <Image source={assets.Aurora} style={styles.shopButtonImage} />
+              <Image source={AuroraImg} style={styles.shopButtonImage} />
               <Text style={styles.shopButtonOverlayText}>AURORA</Text>
             </TouchableOpacity>
            
@@ -3883,7 +3893,7 @@ function HomeScreen({ setTab }) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ImageBackground
-        //source={assets.homeBg}
+        //source={HomeBgImg}
         style={styles.homebackground}
         resizeMode="cover"
       >
@@ -3894,7 +3904,7 @@ function HomeScreen({ setTab }) {
             onPress={() => setTab("storyboard")}
             activeOpacity={0.85}
           >
-            <Image source={assets.storyboard} style={styles.buttonImage} />
+            <Image source={StoryboardImg} style={styles.buttonImage} />
             <Text style={styles.buttonOverlayText}>STORYBOARD</Text>
 
             {/* Non-interactive pulsing Play overlay (centered) */}
@@ -3965,11 +3975,11 @@ function HomeScreen({ setTab }) {
               >
                 {/* Two copies for seamless loop */}
                 <Image
-                  source={assets.library}
+                  source={LibraryImg}
                   style={{ width: libWidth || '50%', height: '100%', resizeMode: 'cover' }}
                 />
                 <Image
-                  source={assets.library}
+                  source={LibraryImg}
                   style={{ width: libWidth || '50%', height: '100%', resizeMode: 'cover' }}
                 />
               </Animated.View>
@@ -3986,7 +3996,7 @@ function HomeScreen({ setTab }) {
             activeOpacity={0.85}
             onPress={() => setTab("shoppinglinks")}
           >
-            <Image source={assets.shop} style={styles.buttonImage} />
+            <Image source={ShopImg} style={styles.buttonImage} />
             <Text style={styles.buttonOverlayText}>SHOP</Text>
           </TouchableOpacity>
         </View>
