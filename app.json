@@ -1,35 +1,42 @@
 {
   "expo": {
-    "name": "MyStorybookApp",
+    "name": "PlushPlaygroundV1",
     "slug": "MyStorybookApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "jsEngine": "hermes",
+
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+
     "ios": {
+      "bundleIdentifier": "com.finturely.PlushPlaygroundV1",
+      "buildNumber": "1",
       "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "This app uses your microphone to recognize speech.",
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "bundleIdentifier": "com.finturely.MyStorybookApp"
+      }
     },
+
     "android": {
+      "package": "com.finturely.plushplaygroundv1",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
     },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
+
     "extra": {
       "eas": {
         "projectId": "f6e52cac-9757-481d-8e45-277d19945b1a"
