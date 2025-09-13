@@ -1,19 +1,17 @@
 {
   "expo": {
     "name": "PlushPlaygroundV1",
-    "slug": "MyStorybookApp",
+    "slug": "PlushPlayground",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "jsEngine": "hermes",
-
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
       "bundleIdentifier": "com.finturely.PlushPlaygroundV1",
       "buildNumber": "1",
@@ -23,7 +21,6 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-
     "android": {
       "package": "com.finturely.plushplaygroundv1",
       "adaptiveIcon": {
@@ -32,15 +29,14 @@
       },
       "edgeToEdgeEnabled": true
     },
-
     "web": {
       "favicon": "./assets/favicon.png"
     },
-
     "extra": {
       "eas": {
-        "projectId": "f6e52cac-9757-481d-8e45-277d19945b1a"
+        "projectId": "448187e4-6099-4780-8fe2-566e17676ac4"
       }
-    }
+    },
+    "owner": "finturely"
   }
 }
